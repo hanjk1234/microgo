@@ -17,6 +17,9 @@ type ThriftWorker struct {
 	server            thrift.TServer
 	config            *common.Config
 	permissionManager *worker.PermissionManager
+	//public
+	TransportFactory thrift.TTransportFactory
+	ProtocolFactory  thrift.TProtocolFactory
 }
 
 func NewThriftWorker() *ThriftWorker {
@@ -25,6 +28,8 @@ func NewThriftWorker() *ThriftWorker {
 		mProcessor:        NewMultiplexedProcessor(),
 		serviceManager:    worker.NewServiceManager(),
 		permissionManager: worker.NewPermissionManager(),
+		TransportFactory:  thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()),
+		ProtocolFactory:   thrift.NewTBinaryProtocolFactoryDefault(),
 	}
 }
 
@@ -54,9 +59,8 @@ func (t *ThriftWorker) Start() error {
 	if err != nil {
 		return err
 	}
-	transportFactory := thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory())
-	protocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
-	t.server = thrift.NewTSimpleServer4(t.mProcessor, socket, transportFactory, protocolFactory)
+
+	t.server = thrift.NewTSimpleServer4(t.mProcessor, socket, t.TransportFactory, t.ProtocolFactory)
 	if t.register != nil {
 		t.register.Register(t.serviceManager.OnlineService)
 	}
