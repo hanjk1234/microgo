@@ -5,8 +5,8 @@ var (
 	serviceId = map[string]string{}
 )
 
-func RegisterServiceId(id, serviceName string) {
-	serviceId[id] = serviceName
+func RegisterServiceId(serviceName, id string) {
+	serviceId[serviceName] = id
 }
 
 func GetServiceId() (r map[string]string) {

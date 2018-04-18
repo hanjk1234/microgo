@@ -1,4 +1,4 @@
-package thriftworker
+package worker
 
 import (
 	"fmt"

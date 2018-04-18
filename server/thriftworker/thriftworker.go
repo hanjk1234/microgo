@@ -7,33 +7,47 @@ import (
 	"time"
 
 	"github.com/seefan/microgo/global"
+	"github.com/seefan/microgo/server/worker"
 )
 
 type ThriftWorker struct {
-	serviceManager *ServiceManager
-	register       *Register
-	mProcessor     *MultiplexedProcessor
-	server         thrift.TServer
-	config         *common.Config
+	serviceManager    *worker.ServiceManager
+	register          *worker.Register
+	mProcessor        *MultiplexedProcessor
+	server            thrift.TServer
+	config            *common.Config
+	permissionManager *worker.PermissionManager
 }
 
-func (t *ThriftWorker) Init() {
-	t.config = common.NewConfig()
+func NewThriftWorker() *ThriftWorker {
+	return &ThriftWorker{
+		config:            common.NewConfig(),
+		mProcessor:        NewMultiplexedProcessor(),
+		serviceManager:    worker.NewServiceManager(),
+		permissionManager: worker.NewPermissionManager(),
+	}
+}
+
+func (t *ThriftWorker) Start() error {
 	t.config.LoadJson(global.RuntimeRoot + "/conf.json")
-	t.serviceManager = NewServiceManager(t.config)
 
 	if t.config.Msr.Enabled {
-		t.register = NewRegister(t.config)
+		t.register = worker.NewRegister(t.config)
 	}
-}
-func (t *ThriftWorker) Start() error {
-	t.Init()
-	t.serviceManager.Init()
-	if len(t.serviceManager.Processor) == 0 {
-		//return fmt.Errorf("empty service")
+	processor := make(map[string]thrift.TProcessor)
+	t.serviceManager.Init(t.config, func(id, name string) error {
+		if p, err := createThriftProcessor(name); err == nil {
+			processor[id] = p
+			return nil
+		} else {
+			return err
+		}
+	})
+	if len(processor) == 0 {
+		return fmt.Errorf("empty service")
 	}
-	t.mProcessor = NewMultiplexedProcessor()
-	for id, processor := range t.serviceManager.Processor {
+	t.permissionManager.Init(t.config, t.serviceManager.OnlineService)
+	for id, processor := range processor {
 		t.mProcessor.RegisterProcessor(id, processor)
 	}
 	socket, err := thrift.NewTServerSocketTimeout(fmt.Sprintf("%s:%d", t.config.Host, t.config.Port), time.Duration(t.config.Timeout)*time.Second)
@@ -44,7 +58,7 @@ func (t *ThriftWorker) Start() error {
 	protocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
 	t.server = thrift.NewTSimpleServer4(t.mProcessor, socket, transportFactory, protocolFactory)
 	if t.register != nil {
-		t.register.Register(t.serviceManager.Service)
+		t.register.Register(t.serviceManager.OnlineService)
 	}
 	return t.server.Serve()
 }

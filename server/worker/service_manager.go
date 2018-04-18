@@ -1,9 +1,8 @@
-package thriftworker
+package worker
 
 import (
 	"encoding/json"
 	"fmt"
-	"git.apache.org/thrift.git/lib/go/thrift"
 	log "github.com/cihub/seelog"
 	"github.com/go-ini/ini"
 	"github.com/hashicorp/consul/api"
@@ -13,20 +12,18 @@ import (
 )
 
 type ServiceManager struct {
-	config    *common.Config
-	consul    *api.Client
-	Processor map[string]thrift.TProcessor
-	Service   map[string]string
+	config        *common.Config
+	consul        *api.Client
+	OnlineService map[string]string
 }
 
-func NewServiceManager(cfg *common.Config) *ServiceManager {
+func NewServiceManager() *ServiceManager {
 	return &ServiceManager{
-		config:    cfg,
-		Processor: make(map[string]thrift.TProcessor),
-		Service:   make(map[string]string),
+		OnlineService: make(map[string]string),
 	}
 }
-func (s *ServiceManager) Init() {
+func (s *ServiceManager) Init(cfg *common.Config, f func(id, name string) error) {
+	s.config = cfg
 	idService := make(map[string]string)
 	if s.config.Msr.Enabled {
 		cfg := api.DefaultConfig()
@@ -48,17 +45,18 @@ func (s *ServiceManager) Init() {
 		ioutil.WriteFile(common.Path(global.RuntimeRoot, "service_id.json"), bs, 0764)
 	}
 
-	serviceAll = make(map[string]string)
-	//load all service
+	//check all service
 	for _, id := range s.config.Service {
 		if name, ok := idService[id]; ok {
-			if s.loadService(id, name) {
-				s.Service[id] = name
+			if err := f(id, name); err == nil {
+				s.OnlineService[id] = name
+			} else {
+				log.Errorf("load service %s error", name)
 			}
 		}
 	}
 
-	log.Debug("service is load ", s.Service)
+	log.Debug("service config is load ", s.OnlineService)
 }
 func (s *ServiceManager) getAllService() map[string]string {
 	nameId := make(map[string]string)
@@ -91,11 +89,4 @@ func (s *ServiceManager) getAllService() map[string]string {
 		}
 	}
 	return nameId
-}
-func (s *ServiceManager) loadService(id, name string) bool {
-	if p, err := global.CreateThriftProcessor(name); err == nil {
-		s.Processor[id] = p
-		return true
-	}
-	return false
 }

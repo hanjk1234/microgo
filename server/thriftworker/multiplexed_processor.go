@@ -7,11 +7,24 @@ import (
 	"strings"
 	"time"
 	"context"
+	"github.com/seefan/microgo/server/worker"
 )
 
 type MultiplexedProcessor struct {
-	thrift.TMultiplexedProcessor
 	serviceProcessorMap map[string]thrift.TProcessor
+	DefaultProcessor    thrift.TProcessor
+	auth                *worker.PermissionManager
+}
+
+func (t *MultiplexedProcessor) RegisterDefault(processor thrift.TProcessor) {
+	t.DefaultProcessor = processor
+}
+
+func (t *MultiplexedProcessor) RegisterProcessor(name string, processor thrift.TProcessor) {
+	if t.serviceProcessorMap == nil {
+		t.serviceProcessorMap = make(map[string]thrift.TProcessor)
+	}
+	t.serviceProcessorMap[name] = processor
 }
 
 func NewMultiplexedProcessor() *MultiplexedProcessor {
@@ -29,30 +42,30 @@ func (t *MultiplexedProcessor) Process(ctx context.Context, in, out thrift.TProt
 		return false, fmt.Errorf("Unexpected message type %v", typeId)
 	}
 	//extract the service name
-	v := strings.SplitN(name, thrift.MULTIPLEXED_SEPARATOR, 4)
-	if len(v) != 4 || v[0] == "" || v[1] == "" || v[2] == "" || v[3] == "" {
+	v := strings.SplitN(name, thrift.MULTIPLEXED_SEPARATOR, 3)
+	if  len(v) != 3 || v[0] == "" || v[1] == "" || v[2] == "" {
 		if t.DefaultProcessor != nil {
 			smb := thrift.NewStoredMessageProtocol(in, name, typeId, seqid)
 			return t.DefaultProcessor.Process(ctx, smb, out)
 		}
 		log.Warnf("service name not found in message name: %s.  Did you forget to use a TMultiplexProtocol in your client?", name)
-		return t.processFailed(ctx, in, out, v[3], seqid, fmt.Sprintf("%s not found", v[0]), NOT_SERVICE)
+		return t.processFailed(ctx, in, out, name, seqid, fmt.Sprintf("%s not found", name), worker.NOT_SERVICE)
 	}
-	//if t.Auth != nil {
-	//	code := t.Auth.Auth(v[0], v[1], v[2])
-	//	if code != SUCCESS {
-	//		log.Warnf("AuthFailed %s %s %d", v[1], v[2], code)
-	//		return t.processFailed(in, out, v[3], seqid, "Authentication failed", int32(code))
-	//	}
-	//}
+	if t.auth != nil {
+		code := t.auth.Auth(v[0], v[1])
+		if code != worker.SUCCESS {
+			log.Warnf("AuthFailed %s %s %d", v[0], v[1], code)
+			return t.processFailed(ctx, in, out, v[2], seqid, "Authentication failed", int32(code))
+		}
+	}
 	actualProcessor, ok := t.serviceProcessorMap[v[0]]
 	if !ok {
 		log.Warnf("service name not found: %s.  Did you forget to call registerProcessor()?", v[0])
-		return t.processFailed(ctx, in, out, v[3], seqid, fmt.Sprintf("%s not found", v[0]), NOT_SERVICE)
+		return t.processFailed(ctx, in, out, v[2], seqid, fmt.Sprintf("%s not found", v[0]), worker.NOT_SERVICE)
 	}
-	smb := NewStoredMessageProtocol(in, v[3], typeId, seqid)
+	smb := NewStoredMessageProtocol(in, v[2], typeId, seqid)
 
-	return t.processMethod(ctx, actualProcessor, smb, out, v[0], v[3])
+	return t.processMethod(ctx, actualProcessor, smb, out, v[0], v[2])
 }
 
 func (t *MultiplexedProcessor) processMethod(ctx context.Context, actualProcessor thrift.TProcessor, smb *storedMessageProtocol, out thrift.TProtocol,

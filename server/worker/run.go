@@ -1,4 +1,4 @@
-package thriftworker
+package worker
 
 import (
 	"fmt"
@@ -13,10 +13,9 @@ import (
 	log "github.com/cihub/seelog"
 	"github.com/hashicorp/consul/api"
 	"github.com/seefan/to"
-	"github.com/seefan/microgo/server/worker"
 )
 
-func Start(run worker.Worker, reloadConfig bool) {
+func Start(run Worker, reloadConfig bool) {
 	defer common.PrintErr()
 
 	global.RuntimeRoot = os.Args[0] + "_runtime"

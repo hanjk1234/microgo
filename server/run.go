@@ -3,25 +3,24 @@ package server
 import (
 	"os"
 	"github.com/seefan/microgo/server/worker"
-	"github.com/seefan/microgo/server/thriftworker"
 )
 
 var (
 	CMD = []string{"start", "stop", "restart"}
 )
 
-func Run(worker worker.Worker) {
+func Run(w worker.Worker) {
 	cmd := "start"
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]
 	}
 	if CMD[0] == cmd {
-		thriftworker.Start(worker, true)
+		worker.Start(w, true)
 	} else if CMD[1] == cmd {
-		thriftworker.Stop()
+		worker.Stop()
 	} else if CMD[2] == cmd {
-		thriftworker.Stop() //restart with last config
-		thriftworker.Start(worker, false)
+		worker.Stop() //restart with last config
+		worker.Start(w, false)
 	} else {
 		println("Usage: ./you_file {start|stop|restart}")
 	}

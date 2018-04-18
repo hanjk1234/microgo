@@ -1,4 +1,4 @@
-package thriftworker
+package worker
 
 const (
 	/**
@@ -17,10 +17,7 @@ const (
 	 * auth failed
 	 */
 	AUTH_FAILED = 9003
-	/**
-	 * user failed
-	 */
-	USER_FAILED = 9004
+
 	/**
 	* interface
 	*/
