@@ -10,9 +10,6 @@ var (
 	thriftServiceProcessor = map[string]func() thrift.TProcessor{}
 )
 
-func GetServiceProcessor()  {
-
-}
 func RegisterThriftProcessor(name string, proc func() thrift.TProcessor) {
 	thriftServiceProcessor[name] = proc
 }

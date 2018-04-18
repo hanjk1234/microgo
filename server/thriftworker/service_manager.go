@@ -66,13 +66,13 @@ func (s *ServiceManager) getAllService() map[string]string {
 	// cache
 	if !common.NotExist(common.Path(global.RuntimeRoot, "service_id.json")) {
 		if bs, err := ioutil.ReadFile(common.Path(global.RuntimeRoot, "service_id.json")); err == nil {
-			json.Unmarshal(bs, &nameId)
+			if err := json.Unmarshal(bs, &nameId); err != nil {
+				log.Errorf("service_id.json format error")
+			}
 		}
 	}
-	//id=>name
-	for k, v := range global.ServiceId {
-		nameId[k] = v
-	}
+	//merge to program register service id
+	nameId = global.MergeServiceId(nameId)
 	//load config from consul
 	if s.consul != nil {
 		if ks, _, err := s.consul.KV().List("service", nil); err == nil && ks != nil {
