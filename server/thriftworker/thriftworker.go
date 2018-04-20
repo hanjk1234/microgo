@@ -4,17 +4,15 @@ import (
 	"fmt"
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/seefan/microgo/server/common"
-	"time"
-
 	"github.com/seefan/microgo/global"
 	"github.com/seefan/microgo/server/worker"
 )
 
-type ThriftWorker struct {
-	serviceManager    *worker.ServiceManager
-	register          *worker.Register
-	mProcessor        *MultiplexedProcessor
-	server            thrift.TServer
+type thriftWorker struct {
+	serviceManager *worker.ServiceManager
+	register       *worker.Register
+	mProcessor     *MultiplexedProcessor
+
 	config            *common.Config
 	permissionManager *worker.PermissionManager
 	//public
@@ -22,8 +20,8 @@ type ThriftWorker struct {
 	ProtocolFactory  thrift.TProtocolFactory
 }
 
-func NewThriftWorker() *ThriftWorker {
-	return &ThriftWorker{
+func newThriftWorker() thriftWorker {
+	return thriftWorker{
 		config:            common.NewConfig(),
 		mProcessor:        NewMultiplexedProcessor(),
 		serviceManager:    worker.NewServiceManager(),
@@ -32,8 +30,7 @@ func NewThriftWorker() *ThriftWorker {
 		ProtocolFactory:   thrift.NewTBinaryProtocolFactoryDefault(),
 	}
 }
-
-func (t *ThriftWorker) Start() error {
+func (t *thriftWorker) init() error {
 	t.config.LoadJson(global.RuntimeRoot + "/conf.json")
 
 	if t.config.Msr.Enabled {
@@ -55,23 +52,9 @@ func (t *ThriftWorker) Start() error {
 	for id, processor := range processor {
 		t.mProcessor.RegisterProcessor(id, processor)
 	}
-	socket, err := thrift.NewTServerSocketTimeout(fmt.Sprintf("%s:%d", t.config.Host, t.config.Port), time.Duration(t.config.Timeout)*time.Second)
-	if err != nil {
-		return err
-	}
-
-	t.server = thrift.NewTSimpleServer4(t.mProcessor, socket, t.TransportFactory, t.ProtocolFactory)
-	if t.register != nil {
-		t.register.Register(t.serviceManager.OnlineService)
-	}
-	return t.server.Serve()
-}
-func (t *ThriftWorker) Stop() error {
-	if t.register != nil {
-		t.register.DisRegister()
-	}
-	if t.server != nil {
-		return t.server.Stop()
-	}
 	return nil
+}
+
+func (t *thriftWorker) RegisterThriftProcessor(name string, proc func() thrift.TProcessor) {
+	thriftServiceProcessor[name] = proc
 }

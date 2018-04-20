@@ -70,7 +70,9 @@ func (s *ServiceManager) getAllService() map[string]string {
 		}
 	}
 	//merge to program register service id
-	nameId = global.MergeServiceId(nameId)
+	for k, v := range global.ServiceId {
+		nameId[k] = v
+	}
 	//load config from consul
 	if s.consul != nil {
 		if ks, _, err := s.consul.KV().List("service", nil); err == nil && ks != nil {
