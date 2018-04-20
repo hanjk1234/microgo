@@ -58,3 +58,7 @@ func (t *thriftWorker) init() error {
 func (t *thriftWorker) RegisterThriftProcessor(name string, proc func() thrift.TProcessor) {
 	thriftServiceProcessor[name] = proc
 }
+
+func (t *thriftWorker) RegisterServiceId(serviceName, id string) {
+	global.ServiceId[serviceName] = id
+}
