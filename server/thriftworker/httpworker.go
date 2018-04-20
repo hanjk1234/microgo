@@ -27,7 +27,11 @@ func (t *HttpWorker) Start() (err error) {
 	log.Debugf("host on %s:%d", t.config.Host, t.config.Port)
 	handler := thrift.NewThriftHandlerFunc(t.mProcessor, t.ProtocolFactory, t.ProtocolFactory)
 
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Add("Access-Control-Allow-Origin", "*")
+		writer.Header().Add("Access-Control-Allow-Headers", "content-type")
+		handler(writer, request)
+	})
 	if t.register != nil {
 		t.register.Register(t.serviceManager.OnlineService)
 	}
