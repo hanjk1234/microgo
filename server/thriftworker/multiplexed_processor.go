@@ -43,7 +43,7 @@ func (t *MultiplexedProcessor) Process(ctx context.Context, in, out thrift.TProt
 	}
 	//extract the service name
 	v := strings.SplitN(name, thrift.MULTIPLEXED_SEPARATOR, 3)
-	if  len(v) != 3 || v[0] == "" || v[1] == "" || v[2] == "" {
+	if len(v) != 3 || v[0] == "" || v[1] == "" || v[2] == "" {
 		if t.DefaultProcessor != nil {
 			smb := thrift.NewStoredMessageProtocol(in, name, typeId, seqid)
 			return t.DefaultProcessor.Process(ctx, smb, out)
@@ -73,9 +73,9 @@ func (t *MultiplexedProcessor) processMethod(ctx context.Context, actualProcesso
 	now := time.Now()
 	re, err := actualProcessor.Process(ctx, smb, out)
 	if err == nil {
-		log.Infof("MethodExecOk %s %s %v", serviceName, methodName, time.Since(now).Seconds())
+		log.Debugf("MethodExecOk %s %s %v", serviceName, methodName, time.Since(now).Seconds())
 	} else {
-		log.Infof("MethodExecErr %s %s %v", serviceName, methodName, time.Since(now).Seconds())
+		log.Warnf("MethodExecErr %s %s %v", serviceName, methodName, time.Since(now).Seconds())
 	}
 	return re, err
 }
