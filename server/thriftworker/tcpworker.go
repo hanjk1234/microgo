@@ -12,6 +12,11 @@ type TcpWorker struct {
 	server thrift.TServer
 }
 
+func NewTcpWorker() *TcpWorker {
+	return &TcpWorker{
+		thriftWorker: newThriftWorker(),
+	}
+}
 func (t *TcpWorker) Start() (err error) {
 	if err = t.init(); err != nil {
 		return

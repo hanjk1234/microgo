@@ -27,7 +27,7 @@ func (t *MultiplexedProcessor) RegisterProcessor(name string, processor thrift.T
 	t.serviceProcessorMap[name] = processor
 }
 
-func NewMultiplexedProcessor() *MultiplexedProcessor {
+func newMultiplexedProcessor() *MultiplexedProcessor {
 	return &MultiplexedProcessor{
 		serviceProcessorMap: make(map[string]thrift.TProcessor),
 	}
@@ -63,7 +63,7 @@ func (t *MultiplexedProcessor) Process(ctx context.Context, in, out thrift.TProt
 		log.Warnf("service name not found: %s.  Did you forget to call registerProcessor()?", v[0])
 		return t.processFailed(ctx, in, out, v[2], seqid, fmt.Sprintf("%s not found", v[0]), worker.NOT_SERVICE)
 	}
-	smb := NewStoredMessageProtocol(in, v[2], typeId, seqid)
+	smb := newStoredMessageProtocol(in, v[2], typeId, seqid)
 
 	return t.processMethod(ctx, actualProcessor, smb, out, v[0], v[2])
 }
@@ -98,7 +98,7 @@ type storedMessageProtocol struct {
 	seqid  int32
 }
 
-func NewStoredMessageProtocol(protocol thrift.TProtocol, name string, typeId thrift.TMessageType, seqid int32) *storedMessageProtocol {
+func newStoredMessageProtocol(protocol thrift.TProtocol, name string, typeId thrift.TMessageType, seqid int32) *storedMessageProtocol {
 	return &storedMessageProtocol{protocol, name, typeId, seqid}
 }
 

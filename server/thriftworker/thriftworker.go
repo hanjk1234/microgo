@@ -23,7 +23,7 @@ type thriftWorker struct {
 func newThriftWorker() thriftWorker {
 	return thriftWorker{
 		config:            common.NewConfig(),
-		mProcessor:        NewMultiplexedProcessor(),
+		mProcessor:        newMultiplexedProcessor(),
 		serviceManager:    worker.NewServiceManager(),
 		permissionManager: worker.NewPermissionManager(),
 		TransportFactory:  thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()),
