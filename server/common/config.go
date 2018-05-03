@@ -36,7 +36,7 @@ func NewConfig() *Config {
 	return &Config{
 		WorkerId:    "node",
 		WorkerType:  "XE",
-		Service:     []string{"0001"},
+		Service:     []string{},
 		WorkerCount: 2,
 		Host:        "0.0.0.0",
 		Port:        9090,

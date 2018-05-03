@@ -55,7 +55,7 @@ func buildConfig() {
 	cfg := common.NewConfig()
 	cfg.Load("conf.ini")
 	cfg.LoadArgs(os.Args)
-	cfg.Service = append(cfg.Service, "0001")
+	//cfg.Service = append(cfg.Service, "0001")
 	cfg.Service = common.RemoveDuplicatesAndEmpty(cfg.Service)
 	if cfg.Msr.Enabled {
 		apiCfg := api.DefaultConfig()

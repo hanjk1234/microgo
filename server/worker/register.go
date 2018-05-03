@@ -27,7 +27,7 @@ func NewRegister(cfg *common.Config) *Register {
 	return r
 }
 
-func (r *Register) Register(service map[string]string) {
+func (r *Register) Register(service map[string]interface{}) {
 	reg := new(api.AgentServiceRegistration)
 	reg.ID = fmt.Sprintf("%s:%s:%d", r.config.WorkerType, r.config.Host, r.config.Port)
 	if global.RuntimeTest {
@@ -55,16 +55,16 @@ func (r *Register) Register(service map[string]string) {
 		Value: []byte("Go"),
 	}, nil)
 	if err := r.consul.Agent().ServiceRegister(reg); err != nil {
-		log.Errorf("global service %s failed. host is %s:%d。", reg.ID, r.config.Msr.Host, r.config.Msr.Port, err)
+		log.Errorf("global onlineService %s failed. host is %s:%d。", reg.ID, r.config.Msr.Host, r.config.Msr.Port, err)
 	} else {
-		log.Debugf("global service %s success.tag is %v", reg.ID, reg.Tags)
+		log.Debugf("global onlineService %s success.tag is %v", reg.ID, reg.Tags)
 	}
 }
 func (r *Register) DisRegister() {
 	id := fmt.Sprintf("%s:%s:%d", r.config.WorkerType, r.config.Host, r.config.Port)
 	if err := r.consul.Agent().ServiceDeregister(id); err != nil {
-		log.Warnf("disregister service %s failed", id, err)
+		log.Warnf("disregister onlineService %s failed", id, err)
 	} else {
-		log.Debugf("disregister service %s success", id)
+		log.Debugf("disregister onlineService %s success", id)
 	}
 }

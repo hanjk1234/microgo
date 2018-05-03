@@ -37,9 +37,9 @@ func (t *thriftWorker) init() error {
 		t.register = worker.NewRegister(t.config)
 	}
 	processor := make(map[string]thrift.TProcessor)
-	t.serviceManager.Init(t.config, func(id, name string) error {
+	t.serviceManager.Init(t.config, func(name string) error {
 		if p, err := createThriftProcessor(name); err == nil {
-			processor[id] = p
+			processor[name] = p
 			return nil
 		} else {
 			return err
@@ -57,8 +57,4 @@ func (t *thriftWorker) init() error {
 
 func (t *thriftWorker) RegisterThriftProcessor(name string, proc func() thrift.TProcessor) {
 	thriftServiceProcessor[name] = proc
-}
-
-func (t *thriftWorker) RegisterServiceId(serviceName, id string) {
-	global.ServiceId[serviceName] = id
 }
