@@ -15,9 +15,7 @@ func main() {
 	run.RegisterThriftProcessor("test.HelloWorld", func() thrift.TProcessor {
 		return test.NewHelloWorldProcessor(&test2.HelloWorldImpl{})
 	})
-	run.RegisterThriftProcessor("test.HelloWorld1", func() thrift.TProcessor {
-		return test.NewHelloWorldProcessor(&test2.HelloWorldImpl{})
-	})
+
 	//run.AppendPermissionCheck()
 	//define transport and protocol,default is framed,binary
 	//run.TransportFactory = thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory())

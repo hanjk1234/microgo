@@ -23,7 +23,7 @@ type PermissionCheck interface {
 
 type PermissionManager struct {
 	config *common.Config
-	admin  string
+	token  string
 	//online service
 	onlineService map[string]interface{}
 	//plug check
@@ -39,22 +39,22 @@ func NewPermissionManager() *PermissionManager {
 func (p *PermissionManager) Init(cfg *common.Config, onlineService map[string]interface{}) {
 	p.config = cfg
 	p.onlineService = onlineService
-	if p.config.Debug {
-		p.admin = "test"
-	}
+	p.token = cfg.Token
 }
 func (p *PermissionManager) Append(pc PermissionCheck) {
 	p.extCheck = append(p.extCheck, pc)
 }
 func (p *PermissionManager) Auth(sid, key string) int {
-	//
+	//service must online
 	if _, ok := p.onlineService[sid]; !ok {
 		log.Warn("auth failed  ", NOT_SERVICE, sid, key)
 		return NOT_SERVICE
 	}
-	if key != p.admin {
+	//It is not validated if the token is empty
+	if key != p.token && p.token != "" {
 		return AUTH_FAILED
 	}
+	//ext check
 	if p.extCheck != nil {
 		for _, pc := range p.extCheck {
 			if r := pc.Check(sid, key); r != 0 && r != SUCCESS {

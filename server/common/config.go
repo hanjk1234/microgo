@@ -17,7 +17,9 @@ type Config struct {
 	Msr         *MSR     `json:"msr"`
 	Timeout     int      `json:"timeout"`
 	IsTesting   bool     `json:"is_testing"`
-	Debug     bool     `json:"debug"`
+	//use token if debug is true
+	Debug bool   `json:"debug"`
+	Token string `json:"token"`
 }
 type MSR struct {
 	Enabled bool   `json:"enabled"`
@@ -41,8 +43,9 @@ func NewConfig() *Config {
 		Host:        "0.0.0.0",
 		Port:        9090,
 		Timeout:     30,
-		Debug:     false,
+		Debug:       false,
 		IsTesting:   false,
+		Token:       "test",
 		Msr: &MSR{
 			Enabled: false,
 			Host:    "127.0.0.1",
