@@ -43,7 +43,9 @@ func (p *PermissionManager) Init(cfg *common.Config, onlineService map[string]in
 		p.admin = "test"
 	}
 }
-
+func (p *PermissionManager) Append(pc PermissionCheck) {
+	p.extCheck = append(p.extCheck, pc)
+}
 func (p *PermissionManager) Auth(sid, key string) int {
 	//
 	if _, ok := p.onlineService[sid]; !ok {

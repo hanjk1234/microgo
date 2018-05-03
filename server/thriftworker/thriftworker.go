@@ -58,3 +58,6 @@ func (t *thriftWorker) init() error {
 func (t *thriftWorker) RegisterThriftProcessor(name string, proc func() thrift.TProcessor) {
 	thriftServiceProcessor[name] = proc
 }
+func (t *thriftWorker) AppendPermissionCheck(p worker.PermissionCheck) {
+	t.permissionManager.Append(p)
+}
