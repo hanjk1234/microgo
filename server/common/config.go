@@ -79,6 +79,10 @@ func (c *Config) load(cfg *ini.File) error {
 	if err != nil {
 		return err
 	}
+	//set token to test if debug is true
+	if c.Debug {
+		c.Token = "test"
+	}
 	return nil
 }
 func (c *Config) LoadArgs(args []string) error {
