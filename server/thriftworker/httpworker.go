@@ -34,6 +34,7 @@ func (t *HttpWorker) Start() (err error) {
 		handler(writer, request)
 	})
 	t.registerService()
+	t.isRun = true
 	err = t.server.ListenAndServe()
 	if err != nil {
 		t.isRun = false
