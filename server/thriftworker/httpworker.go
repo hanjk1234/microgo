@@ -5,6 +5,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"net/http"
 	log "github.com/cihub/seelog"
+	"context"
 )
 
 type HttpWorker struct {
@@ -32,18 +33,19 @@ func (t *HttpWorker) Start() (err error) {
 		writer.Header().Add("Access-Control-Allow-Headers", "content-type")
 		handler(writer, request)
 	})
-	if t.register != nil {
-		t.register.Register(t.serviceManager.OnlineService)
+	t.registerService()
+	err = t.server.ListenAndServe()
+	if err != nil {
+		t.isRun = false
 	}
-	//return t.server.Serve()
-	return t.server.ListenAndServe()
+	return err
 }
 func (t *HttpWorker) Stop() error {
 	if t.register != nil {
 		t.register.DisRegister()
 	}
 	if t.server != nil {
-		return t.server.Close()
+		return t.server.Shutdown(context.Background())
 	}
 	return nil
 }

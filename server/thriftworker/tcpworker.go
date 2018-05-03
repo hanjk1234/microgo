@@ -9,6 +9,7 @@ import (
 
 type TcpWorker struct {
 	thriftWorker
+
 	server thrift.TServer
 }
 
@@ -34,10 +35,13 @@ func (t *TcpWorker) Start() (err error) {
 
 	log.Debugf("host on %s:%d", t.config.Host, t.config.Port)
 	t.server = thrift.NewTSimpleServer4(t.mProcessor, socket, t.TransportFactory, t.ProtocolFactory)
-	if t.register != nil {
-		t.register.Register(t.serviceManager.OnlineService)
+	t.isRun = true
+	t.registerService()
+	err = t.server.Serve()
+	if err != nil {
+		t.isRun = false
 	}
-	return t.server.Serve()
+	return err
 }
 
 func (t *TcpWorker) Stop() error {

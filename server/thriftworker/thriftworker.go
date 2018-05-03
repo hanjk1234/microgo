@@ -6,6 +6,7 @@ import (
 	"github.com/seefan/microgo/server/common"
 	"github.com/seefan/microgo/global"
 	"github.com/seefan/microgo/server/worker"
+	"time"
 )
 
 type thriftWorker struct {
@@ -18,6 +19,7 @@ type thriftWorker struct {
 	//public
 	TransportFactory thrift.TTransportFactory
 	ProtocolFactory  thrift.TProtocolFactory
+	isRun            bool
 }
 
 func newThriftWorker() thriftWorker {
@@ -60,4 +62,17 @@ func (t *thriftWorker) RegisterThriftProcessor(name string, proc func() thrift.T
 }
 func (t *thriftWorker) AppendPermissionCheck(p worker.PermissionCheck) {
 	t.permissionManager.Append(p)
+}
+func (t *thriftWorker) registerService() {
+	if t.register != nil {
+		go func() {
+			for {
+				<-time.After(time.Second)
+				if t.isRun {
+					t.register.Register(t.serviceManager.OnlineService)
+					break
+				}
+			}
+		}()
+	}
 }
