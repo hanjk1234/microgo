@@ -94,7 +94,7 @@ func Stop() {
 	defer log.Flush()
 	if cfg.Msr.Enabled {
 		register := NewRegister(cfg)
-		register.DisRegister()
+		register.UnRegister()
 	}
 	pid, err := common.GetPid(common.Path(global.RuntimeRoot, "worker.pid"))
 

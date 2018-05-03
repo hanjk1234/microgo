@@ -43,7 +43,7 @@ func (t *HttpWorker) Start() (err error) {
 }
 func (t *HttpWorker) Stop() error {
 	if t.register != nil {
-		t.register.DisRegister()
+		t.register.UnRegister()
 	}
 	if t.server != nil {
 		return t.server.Shutdown(context.Background())

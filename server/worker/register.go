@@ -7,7 +7,7 @@ import (
 	"github.com/seefan/microgo/server/common"
 	"github.com/seefan/microgo/global"
 )
-
+//service register
 type Register struct {
 	config *common.Config
 	consul *api.Client
@@ -26,7 +26,7 @@ func NewRegister(cfg *common.Config) *Register {
 	}
 	return r
 }
-
+//register all service
 func (r *Register) Register(service map[string]interface{}) {
 	reg := new(api.AgentServiceRegistration)
 	reg.ID = fmt.Sprintf("%s:%s:%d", r.config.WorkerType, r.config.Host, r.config.Port)
@@ -50,21 +50,24 @@ func (r *Register) Register(service map[string]interface{}) {
 		reg.Check.Interval = fmt.Sprintf("%ds", r.config.Msr.Check.Interval)
 		reg.Check.TCP = fmt.Sprintf("%s:%d", r.config.Host, r.config.Port)
 	}
-	r.consul.KV().Put(&api.KVPair{
-		Key:   "node/platform/" + reg.ID,
-		Value: []byte("Go"),
-	}, nil)
+
 	if err := r.consul.Agent().ServiceRegister(reg); err != nil {
 		log.Errorf("global onlineService %s failed. host is %s:%d。", reg.ID, r.config.Msr.Host, r.config.Msr.Port, err)
 	} else {
 		log.Debugf("global onlineService %s success.tag is %v", reg.ID, reg.Tags)
+		//Languages for the implementation of reputation services
+		r.consul.KV().Put(&api.KVPair{
+			Key:   "node/platform/" + reg.ID,
+			Value: []byte("Go"),
+		}, nil)
 	}
 }
-func (r *Register) DisRegister() {
+//unregister
+func (r *Register) UnRegister() {
 	id := fmt.Sprintf("%s:%s:%d", r.config.WorkerType, r.config.Host, r.config.Port)
 	if err := r.consul.Agent().ServiceDeregister(id); err != nil {
-		log.Warnf("disregister onlineService %s failed", id, err)
+		log.Warnf("unregister onlineService %s failed", id, err)
 	} else {
-		log.Debugf("disregister onlineService %s success", id)
+		log.Debugf("unregister onlineService %s success", id)
 	}
 }
