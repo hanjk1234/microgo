@@ -1,73 +1,43 @@
 package worker
 
 import (
-	"fmt"
-	log "github.com/cihub/seelog"
-	"github.com/hashicorp/consul/api"
 	"github.com/seefan/microgo/server/common"
 	"github.com/seefan/microgo/global"
 )
-//service register
-type Register struct {
+
+type Register interface {
+	RegisterService(name, address string, port int, serviceName []string)
+	RemoveService(name, address string, port int)
+}
+type RegisterManager struct {
+	regs   []Register
 	config *common.Config
-	consul *api.Client
 }
 
-func NewRegister(cfg *common.Config) *Register {
-	r := &Register{
+func NewRegisterManager(cfg *common.Config) *RegisterManager {
+	return &RegisterManager{
 		config: cfg,
 	}
-	apiCfg := api.DefaultConfig()
-	apiCfg.Address = fmt.Sprintf("%s:%d", cfg.Msr.Host, cfg.Msr.Port)
-	if c, err := api.NewClient(apiCfg); err != nil {
-		log.Error("connect consul error", err)
-	} else {
-		r.consul = c
-	}
-	return r
 }
-//register all service
-func (r *Register) Register(service map[string]interface{}) {
-	reg := new(api.AgentServiceRegistration)
-	reg.ID = fmt.Sprintf("%s:%s:%d", r.config.WorkerType, r.config.Host, r.config.Port)
+func (r *RegisterManager) RegisterService(service []string) {
+	var name string
 	if global.RuntimeTest {
-		reg.Name = "TEST"
+		name = "TEST"
 	} else {
-		reg.Name = r.config.WorkerType
+		name = r.config.WorkerType
 	}
-	reg.Port = r.config.Port
-	for k := range service {
-		reg.Tags = append(reg.Tags, k)
-	}
-	reg.Address = r.config.Host
-	if r.config.Msr.Check.Enabled {
-		if r.config.Msr.Check.RemoveTime < 1 {
-			r.config.Msr.Check.RemoveTime = 1
-		}
-		reg.Check = new(api.AgentServiceCheck)
-		reg.Check.DeregisterCriticalServiceAfter = fmt.Sprintf("%dm", r.config.Msr.Check.RemoveTime)
-		reg.Check.Timeout = fmt.Sprintf("%ds", r.config.Msr.Check.Timeout)
-		reg.Check.Interval = fmt.Sprintf("%ds", r.config.Msr.Check.Interval)
-		reg.Check.TCP = fmt.Sprintf("%s:%d", r.config.Host, r.config.Port)
-	}
-
-	if err := r.consul.Agent().ServiceRegister(reg); err != nil {
-		log.Errorf("global onlineService %s failed. host is %s:%d。", reg.ID, r.config.Msr.Host, r.config.Msr.Port, err)
-	} else {
-		log.Debugf("global onlineService %s success.tag is %v", reg.ID, reg.Tags)
-		//Languages for the implementation of reputation services
-		r.consul.KV().Put(&api.KVPair{
-			Key:   "node/platform/" + reg.ID,
-			Value: []byte("Go"),
-		}, nil)
+	for _, s := range r.regs {
+		s.RegisterService(name, r.config.Host, r.config.Port, service)
 	}
 }
-//unregister
-func (r *Register) UnRegister() {
-	id := fmt.Sprintf("%s:%s:%d", r.config.WorkerType, r.config.Host, r.config.Port)
-	if err := r.consul.Agent().ServiceDeregister(id); err != nil {
-		log.Warnf("unregister onlineService %s failed", id, err)
+func (r *RegisterManager) RemoveService() {
+	var name string
+	if global.RuntimeTest {
+		name = "TEST"
 	} else {
-		log.Debugf("unregister onlineService %s success", id)
+		name = r.config.WorkerType
+	}
+	for _, s := range r.regs {
+		s.RemoveService(name, r.config.Host, r.config.Port)
 	}
 }

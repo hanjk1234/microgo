@@ -46,7 +46,7 @@ func (t *TcpWorker) Start() (err error) {
 
 func (t *TcpWorker) Stop() error {
 	if t.register != nil {
-		t.register.UnRegister()
+		t.register.RemoveService()
 	}
 	if t.server != nil {
 		return t.server.Stop()

@@ -93,8 +93,8 @@ func Stop() {
 	common.InitLog(common.Path(global.RuntimeRoot, "log.xml"), common.Path(global.RuntimeRoot, "logs", "micro_go.log"))
 	defer log.Flush()
 	if cfg.Msr.Enabled {
-		register := NewRegister(cfg)
-		register.UnRegister()
+		register := NewRegisterManager(cfg)
+		register.RemoveService()
 	}
 	pid, err := common.GetPid(common.Path(global.RuntimeRoot, "worker.pid"))
 

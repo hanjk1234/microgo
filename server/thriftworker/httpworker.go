@@ -42,8 +42,8 @@ func (t *HttpWorker) Start() (err error) {
 	return err
 }
 func (t *HttpWorker) Stop() error {
-	if t.register != nil {
-		t.register.UnRegister()
+	if t.config.Msr.Enabled {
+		t.register.RemoveService()
 	}
 	if t.server != nil {
 		return t.server.Shutdown(context.Background())
