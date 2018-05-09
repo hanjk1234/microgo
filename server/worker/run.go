@@ -38,6 +38,7 @@ func Start(run Worker, reloadConfig bool) {
 		log.Info("worker starting")
 		if err := run.Start(); err != nil {
 			log.Infof("worker start failed:%s", err)
+			println(err.Error())
 			sig <- syscall.SIGABRT
 		}
 	}()
