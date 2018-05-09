@@ -64,7 +64,7 @@ func (t *thriftWorker) AppendPermissionCheck(p worker.PermissionCheck) {
 	t.permissionManager.Append(p)
 }
 func (t *thriftWorker) registerService() {
-	if t.config.Msr.Enabled {
+	if t.register != nil {
 		go func() {
 			for {
 				<-time.After(time.Second)

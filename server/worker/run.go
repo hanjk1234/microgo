@@ -33,7 +33,7 @@ func Start(run Worker, reloadConfig bool) {
 		log.Errorf("can not save pid file")
 	}
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2)
 	go func() {
 		log.Info("worker starting")
 		if err := run.Start(); err != nil {
@@ -100,7 +100,7 @@ func Stop() {
 
 	if err == nil {
 		checkCmd := exec.Command("kill", "-s", "0", pid)
-		killCmd := exec.Command("kill", "-s", "USR1", pid)
+		killCmd := exec.Command("kill", "-s", "USR2", pid)
 		now := time.Now()
 		if err := killCmd.Run(); err == nil {
 			for {
