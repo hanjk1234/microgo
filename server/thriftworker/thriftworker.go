@@ -54,6 +54,8 @@ func (t *thriftWorker) init() error {
 	for id, processor := range processor {
 		t.mProcessor.RegisterProcessor(id, processor)
 	}
+
+	t.mProcessor.auth = t.permissionManager.Auth
 	return nil
 }
 

@@ -47,7 +47,7 @@ func (p *PermissionManager) Append(pc PermissionCheck) {
 func (p *PermissionManager) Auth(sid, key string) int {
 	//service must online
 	if _, ok := p.onlineService[sid]; !ok {
-		log.Warn("auth failed  ", NOT_SERVICE, sid, key)
+		log.Warnf("auth failed,code=%d,service=%s,token=%s ", NOT_SERVICE, sid, key)
 		return NOT_SERVICE
 	}
 	//It is not validated if the token is empty

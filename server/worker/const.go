@@ -13,5 +13,5 @@ const (
 	 * auth failed
 	 */
 	AUTH_FAILED = 9003
-
+	Unknown     = 9999
 )

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	log "github.com/cihub/seelog"
 	"context"
+	"strings"
 )
 
 type HttpWorker struct {
@@ -26,12 +27,19 @@ func (t *HttpWorker) Start() (err error) {
 	addr := fmt.Sprintf("%s:%d", t.config.Host, t.config.Port)
 	t.server = &http.Server{Addr: addr}
 	log.Debugf("host on %s:%d", t.config.Host, t.config.Port)
-	handler := thrift.NewThriftHandlerFunc(t.mProcessor, t.ProtocolFactory, t.ProtocolFactory)
 
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Add("Access-Control-Allow-Origin", "*")
 		writer.Header().Add("Access-Control-Allow-Headers", "content-type")
-		handler(writer, request)
+		hp := newHttpProcessor(strings.Split(request.RequestURI, "/"), t.mProcessor.auth)
+		handler := thrift.NewThriftHandlerFunc(hp, t.ProtocolFactory, t.ProtocolFactory)
+		var pr thrift.TProcessor
+		if serviceName, err := hp.getProcessorName(); err == nil {
+			if pr, err = t.mProcessor.getProcessor(serviceName); err == nil {
+				hp.processor = pr
+			}
+		}
+		handler(writer,request)
 	})
 	t.registerService()
 	t.isRun = true

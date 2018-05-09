@@ -8,12 +8,13 @@ import (
 	"time"
 	"context"
 	"github.com/seefan/microgo/server/worker"
+	"github.com/golangteam/function/errors"
 )
 
 type MultiplexedProcessor struct {
 	serviceProcessorMap map[string]thrift.TProcessor
 	DefaultProcessor    thrift.TProcessor
-	auth                *worker.PermissionManager
+	auth                func(string, string) int
 }
 
 func (t *MultiplexedProcessor) RegisterDefault(processor thrift.TProcessor) {
@@ -26,7 +27,16 @@ func (t *MultiplexedProcessor) RegisterProcessor(name string, processor thrift.T
 	}
 	t.serviceProcessorMap[name] = processor
 }
-
+func (t *MultiplexedProcessor) getProcessor(name string) (thrift.TProcessor,error) {
+	if actualProcessor, ok := t.serviceProcessorMap[name]; ok {
+		return actualProcessor,nil
+	} else {
+		if t.DefaultProcessor != nil {
+			return t.DefaultProcessor,nil
+		}
+	}
+	return nil,errors.New("service not found")
+}
 func newMultiplexedProcessor() *MultiplexedProcessor {
 	return &MultiplexedProcessor{
 		serviceProcessorMap: make(map[string]thrift.TProcessor),
@@ -52,7 +62,7 @@ func (t *MultiplexedProcessor) Process(ctx context.Context, in, out thrift.TProt
 		return t.processFailed(ctx, in, out, name, seqid, fmt.Sprintf("%s not found", name), worker.NOT_SERVICE)
 	}
 	if t.auth != nil {
-		code := t.auth.Auth(v[0], v[1])
+		code := t.auth(v[0], v[1])
 		if code != worker.SUCCESS {
 			log.Warnf("AuthFailed %s %s %d", v[0], v[1], code)
 			return t.processFailed(ctx, in, out, v[2], seqid, "Authentication failed", int32(code))
