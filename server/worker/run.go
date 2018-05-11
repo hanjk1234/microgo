@@ -5,23 +5,23 @@ import (
 	"github.com/seefan/microgo/server/common"
 	"github.com/seefan/microgo/global"
 	"os"
-	"os/exec"
-	"os/signal"
-	"syscall"
-	"time"
-
 	log "github.com/cihub/seelog"
 	"github.com/hashicorp/consul/api"
 	"github.com/seefan/to"
 )
 
-func Start(run Worker, reloadConfig bool) {
+func Start(w Worker, reloadConfig bool) error {
 	defer common.PrintErr()
 
 	global.RuntimeRoot = os.Args[0] + "_runtime"
 
 	if common.NotExist(global.RuntimeRoot) {
 		os.MkdirAll(global.RuntimeRoot, 0764)
+	}
+	if err := common.SavePid(common.Path(global.RuntimeRoot, "worker.pid")); err != nil {
+		println("can not save pid file")
+	}
+	if common.NotExist(common.Path(global.RuntimeRoot, "logs")) {
 		os.Mkdir(common.Path(global.RuntimeRoot, "logs"), 0764)
 	}
 	common.InitLog(common.Path(global.RuntimeRoot, "log.xml"), common.Path(global.RuntimeRoot, "logs", "micro_go.log"))
@@ -29,28 +29,8 @@ func Start(run Worker, reloadConfig bool) {
 	if reloadConfig {
 		buildConfig()
 	}
-	if err := common.SavePid(common.Path(global.RuntimeRoot, "worker.pid")); err != nil {
-		log.Errorf("can not save pid file")
-	}
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2)
-	go func() {
-		log.Info("worker starting")
-		if err := run.Start(); err != nil {
-			log.Infof("worker start failed:%s", err)
-			println(err.Error())
-			sig <- syscall.SIGABRT
-		}
-	}()
-
-	s := <-sig
-
-	log.Info("received signal:", s)
-	if err := run.Stop(); err != nil {
-		log.Error("worker close has error", err)
-	} else {
-		log.Info("worker is closed")
-	}
+	log.Info("worker starting")
+	return w.Start()
 }
 func buildConfig() {
 	cfg := common.NewConfig()
@@ -97,26 +77,8 @@ func Stop() {
 		register := NewRegisterManager(cfg)
 		register.RemoveService()
 	}
-	pid, err := common.GetPid(common.Path(global.RuntimeRoot, "worker.pid"))
-
-	if err == nil {
-		checkCmd := exec.Command("kill", "-s", "0", pid)
-		killCmd := exec.Command("kill", "-s", "USR2", pid)
-		now := time.Now()
-		if err := killCmd.Run(); err == nil {
-			for {
-				if err := checkCmd.Run(); err != nil {
-					break
-				}
-				time.Sleep(time.Millisecond * 100)
-				if time.Since(now).Seconds() > 30 {
-					break
-				}
-			}
-		} else {
-			log.Error("worker stop error", err)
-		}
-	} else {
-		println("pid file not found")
+	if pid, err := common.GetPid(common.Path(global.RuntimeRoot, "worker.pid")); err == nil {
+		common.Kill(pid)
 	}
+
 }
